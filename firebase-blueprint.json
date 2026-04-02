@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific settings and profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "displayName": { "type": "string", "description": "The display name of the user." },
+        "email": { "type": "string", "description": "The email address of the user." },
+        "currency": { "type": "string", "description": "The preferred currency (e.g., BRL, USD)." }
+      },
+      "required": ["uid", "email"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Represents a single financial transaction (income or expense).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The ID of the user who owns this transaction." },
+        "amount": { "type": "number", "description": "The value of the transaction." },
+        "type": { "type": "string", "enum": ["income", "expense"], "description": "Whether it's money coming in or going out." },
+        "category": { "type": "string", "description": "The category of the transaction (e.g., Food, Salary)." },
+        "description": { "type": "string", "description": "A brief description of the transaction." },
+        "item": { "type": "string", "description": "The specific item purchased." },
+        "date": { "type": "string", "format": "date", "description": "The date the transaction occurred." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the record was created." },
+        "paymentMethod": { "type": "string", "enum": ["credit_card", "other"], "description": "The method of payment." },
+        "isInstallment": { "type": "boolean", "description": "Whether the purchase is in installments." },
+        "totalInstallments": { "type": "integer", "description": "Total number of installments." },
+        "paidInstallments": { "type": "integer", "description": "Number of installments already paid." },
+        "billingCycle": { "type": "string", "enum": ["current", "next"], "description": "The billing cycle for non-installment credit card purchases." },
+        "bank": { "type": "string", "description": "The bank associated with the credit card." }
+      },
+      "required": ["uid", "amount", "type", "category", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "All financial transactions."
+    }
+  }
+}

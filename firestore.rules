@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (optional)
+    //   - email: string (required)
+    //   - currency: string (optional)
+    //
+    // Collection: transactions
+    // Document ID: {transactionId}
+    // Fields:
+    //   - uid: string (required)
+    //   - amount: number (required)
+    //   - type: string (required, 'income' | 'expense')
+    //   - category: string (required)
+    //   - description: string (optional)
+    //   - date: string (required, ISO 8601)
+    //   - createdAt: string (required, ISO 8601)
+    //   - billingCycle: string (optional, 'current' | 'next')
+    //   - billingMonth: string (optional, YYYY-MM)
+    //   - bank: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && (
+        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$") ||
+        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$") ||
+        dateStr.matches("^\\d{4}-\\d{2}$")
+      );
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             (data.get('displayName', '') is string) &&
+             (data.get('currency', '') is string);
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['uid', 'amount', 'type', 'category', 'date', 'createdAt']) &&
+             data.keys().hasOnly(['uid', 'amount', 'type', 'category', 'date', 'createdAt', 'description', 'item', 'paymentMethod', 'isInstallment', 'totalInstallments', 'paidInstallments', 'billingCycle', 'billingMonth', 'bank', 'updatedAt']) &&
+             data.uid == request.auth.uid &&
+             data.amount is number &&
+             data.type in ['income', 'expense'] &&
+             data.category is string &&
+             data.category.size() > 0 &&
+             data.category.size() < 50 &&
+             isValidDateString(data.date) &&
+             isValidDateString(data.createdAt) &&
+             (data.get('description', '') is string) &&
+             (data.get('item', '') is string) &&
+             (data.get('paymentMethod', '') is string) &&
+             (data.get('isInstallment', false) is bool) &&
+             (data.get('totalInstallments', 0) is int) &&
+             (data.get('paidInstallments', 0) is int) &&
+             (data.get('billingCycle', 'current') in ['current', 'next']) &&
+             (!('billingMonth' in data) || isValidDateString(data.billingMonth)) &&
+             (data.get('bank', '') is string) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isDocOwner() && isValidTransaction(request.resource.data) && 
+                      request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner();
+    }
+  }
+}
