@@ -26,6 +26,7 @@ service cloud.firestore {
     //   - billingCycle: string (optional, 'current' | 'next')
     //   - billingMonth: string (optional, YYYY-MM)
     //   - bank: string (optional)
+    //   - isPaid: bool (optional)
     //
     // ===============================================================
 
@@ -69,7 +70,7 @@ service cloud.firestore {
 
     function isValidTransaction(data) {
       return data.keys().hasAll(['uid', 'amount', 'type', 'category', 'date', 'createdAt']) &&
-             data.keys().hasOnly(['uid', 'amount', 'type', 'category', 'date', 'createdAt', 'description', 'item', 'paymentMethod', 'isInstallment', 'totalInstallments', 'paidInstallments', 'billingCycle', 'billingMonth', 'bank', 'updatedAt']) &&
+             data.keys().hasOnly(['uid', 'amount', 'type', 'category', 'date', 'createdAt', 'description', 'item', 'paymentMethod', 'isInstallment', 'totalInstallments', 'paidInstallments', 'billingCycle', 'billingMonth', 'bank', 'updatedAt', 'isPaid']) &&
              data.uid == request.auth.uid &&
              data.amount is number &&
              data.type in ['income', 'expense'] &&
@@ -87,7 +88,8 @@ service cloud.firestore {
              (data.get('billingCycle', 'current') in ['current', 'next']) &&
              (!('billingMonth' in data) || isValidDateString(data.billingMonth)) &&
              (data.get('bank', '') is string) &&
-             (!('updatedAt' in data) || data.updatedAt is timestamp);
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (data.get('isPaid', false) is bool);
     }
 
     // ===============================================================

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb" />
+      <stop offset="100%" style="stop-color:#10b981" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#g)" />
+  <g transform="translate(6, 6) scale(0.976)">
+    <!-- Credit Card Outline -->
+    <rect x="80" y="140" width="352" height="232" rx="28" fill="none" stroke="white" stroke-width="20" />
+    
+    <!-- Magnetic Strip -->
+    <line x1="80" y1="210" x2="432" y2="210" stroke="white" stroke-width="20" />
+    
+    <!-- Decorative Chip -->
+    <rect x="120" y="260" width="55" height="42" rx="6" fill="white" opacity="0.9" />
+    
+    <!-- Dynamic Status Circle -->
+    <circle cx="365" cy="281" r="22" fill="white" />
+    <circle cx="325" cy="281" r="22" fill="white" opacity="0.6" />
+  </g>
+</svg>

@@ -5,6 +5,22 @@
   --color-secondary: #10b981; /* emerald-500 */
 }
 
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility h-dvh {
+  height: 100dvh;
+}
+
+@utility max-h-dvh {
+  max-height: 100dvh;
+}
+
 body {
   @apply bg-zinc-50 text-zinc-900;
   background-image: 

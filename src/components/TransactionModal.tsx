@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, TrendingDown, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon, Loader2, Sparkles, Save, Trash2, Calculator, Delete, Check, RotateCcw } from 'lucide-react';
 import { format, parseISO, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { GoogleGenAI, Type } from "@google/genai";
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -29,6 +28,7 @@ interface Transaction {
   billingMonth?: string; // Format: YYYY-MM
   bank?: string;
   updatedAt?: any;
+  isPaid?: boolean;
 }
 
 interface TransactionModalProps {
@@ -38,7 +38,6 @@ interface TransactionModalProps {
   onDelete?: (id: string) => void;
   editingTransaction: Transaction | null;
   categories: { income: string[], expense: string[] };
-  genAI: any;
   activeTab?: string;
 }
 
@@ -49,7 +48,6 @@ export const TransactionModal = React.memo(({
   onDelete,
   editingTransaction, 
   categories,
-  genAI,
   activeTab
 }: TransactionModalProps) => {
   const [amount, setAmount] = useState('');
@@ -65,6 +63,7 @@ export const TransactionModal = React.memo(({
   const [billingCycle, setBillingCycle] = useState<'current' | 'next'>('current');
   const [billingMonth, setBillingMonth] = useState('');
   const [bank, setBank] = useState('');
+  const [isPaid, setIsPaid] = useState(false);
   const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -164,6 +163,7 @@ export const TransactionModal = React.memo(({
       setBillingCycle(editingTransaction.billingCycle || 'current');
       setBillingMonth(editingTransaction.billingMonth || '');
       setBank(editingTransaction.bank || '');
+      setIsPaid(editingTransaction.isPaid || false);
     } else {
       setAmount('');
       setType('expense');
@@ -171,13 +171,19 @@ export const TransactionModal = React.memo(({
       setDescription('');
       setItem('');
       setDate(format(new Date(), 'yyyy-MM-dd'));
-      setPaymentMethod(activeTab === 'credit_card' ? 'credit_card' : 'other');
+      setPaymentMethod(
+        activeTab === 'credit_card' ? 'credit_card' : 
+        activeTab === 'vr' ? 'vr' :
+        activeTab === 'vt' ? 'vt' :
+        'other'
+      );
       setIsInstallment(false);
       setTotalInstallments('');
       setPaidInstallments('');
       setBillingCycle('current');
       setBillingMonth('');
       setBank('');
+      setIsPaid(false);
     }
   }, [editingTransaction, categories, isOpen, activeTab]);
 
@@ -197,7 +203,8 @@ export const TransactionModal = React.memo(({
         paidInstallments !== (editingTransaction.paidInstallments?.toString() || '') ||
         billingCycle !== (editingTransaction.billingCycle || 'current') ||
         billingMonth !== (editingTransaction.billingMonth || '') ||
-        bank !== (editingTransaction.bank || '')
+        bank !== (editingTransaction.bank || '') ||
+        isPaid !== (editingTransaction.isPaid || false)
       );
     } else {
       return (
@@ -207,13 +214,19 @@ export const TransactionModal = React.memo(({
         description !== '' ||
         item !== '' ||
         date !== format(new Date(), 'yyyy-MM-dd') ||
-        paymentMethod !== (activeTab === 'credit_card' ? 'credit_card' : 'other') ||
+        paymentMethod !== (
+          activeTab === 'credit_card' ? 'credit_card' : 
+          activeTab === 'vr' ? 'vr' :
+          activeTab === 'vt' ? 'vt' :
+          'other'
+        ) ||
         isInstallment !== false ||
         totalInstallments !== '' ||
         paidInstallments !== '' ||
         billingCycle !== 'current' ||
         billingMonth !== '' ||
-        bank !== ''
+        bank !== '' ||
+        isPaid !== false
       );
     }
   }, [amount, type, category, description, item, date, paymentMethod, isInstallment, totalInstallments, paidInstallments, billingCycle, bank, editingTransaction, categories, activeTab]);
@@ -242,6 +255,7 @@ export const TransactionModal = React.memo(({
         date,
         paymentMethod,
         isInstallment: paymentMethod === 'credit_card' ? isInstallment : false,
+        isPaid
       };
 
       if (paymentMethod === 'credit_card') {
@@ -292,57 +306,59 @@ export const TransactionModal = React.memo(({
         const base64Data = (reader.result as string).split(',')[1];
         if (!base64Data) return;
 
-        const response = await genAI.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: {
-            parts: [
-              {
-                inlineData: {
-                  data: base64Data,
-                  mimeType: file.type
-                }
-              },
-              {
-                text: "Analise este documento (PDF ou Imagem) de transação financeira e extraia os seguintes dados em formato JSON: valor (number), tipo (string: 'income' ou 'expense'), categoria (string baseada nas categorias: Alimentação, Transporte, Lazer, Saúde, Educação, Moradia, Doação, Poupança do filho, Fatura do Cartão, Despesas com o carro, Celular, Vestuário, Salário, Investimentos, Presente, Outros), estabelecimento (string), item adquirido (string, se disponível), data (string: YYYY-MM-DD), e se for uma compra parcelada no cartão, extraia isInstallment (boolean), totalInstallments (number) e paidInstallments (number). Se não encontrar algum dado, tente inferir ou deixe vazio."
+        try {
+          const response = await fetch("/api/ai/extract", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: {
+                parts: [
+                  {
+                    inlineData: {
+                      data: base64Data,
+                      mimeType: file.type
+                    }
+                  },
+                  {
+                    text: "Analise este documento (PDF ou Imagem) de transação financeira e extraia os seguintes dados em formato JSON: valor (number), tipo (string: 'income' ou 'expense'), categoria (string baseada nas categorias: Alimentação, Transporte, Lazer, Saúde, Educação, Moradia, Doação, Poupança do filho, Fatura do Cartão, Despesas com o carro, Celular, Vestuário, Salário, Investimentos, Presente, Outros), estabelecimento (string), item adquirido (string, se disponível), data (string: YYYY-MM-DD), e se for uma compra parcelada no cartão, extraia isInstallment (boolean), totalInstallments (number) e paidInstallments (number). Se não encontrar algum dado, tente inferir ou deixe vazio."
+                  }
+                ]
               }
-            ]
-          },
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                amount: { type: Type.NUMBER },
-                type: { type: Type.STRING, enum: ["income", "expense"] },
-                category: { type: Type.STRING },
-                description: { type: Type.STRING },
-                item: { type: Type.STRING },
-                date: { type: Type.STRING },
-                isInstallment: { type: Type.BOOLEAN },
-                totalInstallments: { type: Type.NUMBER },
-                paidInstallments: { type: Type.NUMBER }
-              },
-              required: ["amount", "type", "category", "date"]
-            }
-          }
-        });
+            })
+          });
 
-        const result = JSON.parse(response.text);
-        if (result) {
-          setAmount(result.amount?.toString() || '');
-          setType(result.type || 'expense');
-          setCategory(result.category || '');
-          setDescription(result.description || '');
-          setItem(result.item || '');
-          setDate(result.date || format(new Date(), 'yyyy-MM-dd'));
-          if (result.isInstallment !== undefined) {
-            setIsInstallment(result.isInstallment);
-            if (result.isInstallment) setPaymentMethod('credit_card');
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Erro no servidor");
           }
-          if (result.totalInstallments) setTotalInstallments(result.totalInstallments.toString());
-          if (result.paidInstallments) setPaidInstallments(result.paidInstallments.toString());
+
+          const resultData = await response.json();
+          const textResponse = resultData.text;
+          if (!textResponse) {
+            throw new Error("Resposta da IA vazia");
+          }
+
+          const result = JSON.parse(textResponse);
+          if (result) {
+            setAmount(result.amount?.toString() || '');
+            setType(result.type || 'expense');
+            setCategory(result.category || '');
+            setDescription(result.description || '');
+            setItem(result.item || '');
+            setDate(result.date || format(new Date(), 'yyyy-MM-dd'));
+            if (result.isInstallment !== undefined) {
+              setIsInstallment(result.isInstallment);
+              if (result.isInstallment) setPaymentMethod('credit_card');
+            }
+            if (result.totalInstallments) setTotalInstallments(result.totalInstallments.toString());
+            if (result.paidInstallments) setPaidInstallments(result.paidInstallments.toString());
+          }
+          setIsScanning(false);
+        } catch (err) {
+          console.error("Erro ao processar resposta da IA:", err);
+          setSaveError("Não foi possível processar o documento automaticamente. Verifique se a chave de API (GEMINI_API_KEY) está configurada.");
+          setIsScanning(false);
         }
-        setIsScanning(false);
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -373,11 +389,11 @@ export const TransactionModal = React.memo(({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden"
+              className="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95dvh] sm:max-h-[90dvh] mt-auto sm:mt-0 pb-[env(safe-area-inset-bottom)]"
             >
-              <div className="p-6 border-b border-zinc-100 flex justify-between items-center">
+              <div className="p-4 sm:p-6 border-b border-zinc-100 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold">{editingTransaction ? 'Editar Transação' : 'Nova Transação'}</h3>
+                  <h3 className="text-base sm:text-xl font-bold">{editingTransaction ? 'Editar Transação' : 'Nova Transação'}</h3>
                   {isDirty && (
                     <motion.div 
                       initial={{ scale: 0 }}
@@ -385,7 +401,7 @@ export const TransactionModal = React.memo(({
                       className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-600 rounded-full border border-amber-100"
                     >
                       <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Não salvo</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Pendente</span>
                     </motion.div>
                   )}
                 </div>
@@ -394,7 +410,7 @@ export const TransactionModal = React.memo(({
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
                 {!editingTransaction && (
                   <>
                     <div className="relative">
@@ -409,14 +425,14 @@ export const TransactionModal = React.memo(({
                       <label 
                         htmlFor="pdf-upload"
                         className={cn(
-                          "w-full flex items-center justify-center gap-3 p-4 border-2 border-dashed border-emerald-200 rounded-2xl cursor-pointer transition-all",
+                          "w-full flex items-center justify-center gap-3 p-3 sm:p-4 border-2 border-dashed border-emerald-200 rounded-2xl cursor-pointer transition-all",
                           isScanning ? "bg-emerald-50 border-emerald-400 cursor-not-allowed" : "hover:bg-emerald-50 hover:border-emerald-400"
                         )}
                       >
                         {isScanning ? (
                           <>
                             <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
-                            <span className="text-emerald-600 font-semibold">Lendo documento...</span>
+                            <span className="text-emerald-600 font-semibold text-sm">Escaneando...</span>
                           </>
                         ) : (
                           <>
@@ -424,8 +440,8 @@ export const TransactionModal = React.memo(({
                               <Sparkles className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div className="text-left">
-                              <p className="text-emerald-700 font-bold text-sm">Escanear PDF ou Imagem</p>
-                              <p className="text-emerald-600/60 text-xs">Preenchimento automático com IA</p>
+                              <p className="text-emerald-700 font-bold text-sm">Escanear com IA</p>
+                              <p className="text-emerald-600/60 text-[10px] sm:text-xs">Preenchimento automático</p>
                             </div>
                           </>
                         )}
@@ -434,7 +450,7 @@ export const TransactionModal = React.memo(({
 
                     <div className="relative flex items-center gap-4">
                       <div className="h-px bg-zinc-100 flex-1" />
-                      <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">ou preencha manualmente</span>
+                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">ou manual</span>
                       <div className="h-px bg-zinc-100 flex-1" />
                     </div>
                   </>
@@ -448,7 +464,7 @@ export const TransactionModal = React.memo(({
                       setCategory(categories.income[0]);
                     }}
                     className={cn(
-                      "flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
+                      "flex-1 py-2 sm:py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-xs sm:text-sm",
                       type === 'income' ? "bg-white text-emerald-600 shadow-sm" : "text-zinc-500"
                     )}
                   >
@@ -462,7 +478,7 @@ export const TransactionModal = React.memo(({
                       setCategory(categories.expense[0]);
                     }}
                     className={cn(
-                      "flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2",
+                      "flex-1 py-2 sm:py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-xs sm:text-sm",
                       type === 'expense' ? "bg-white text-red-600 shadow-sm" : "text-zinc-500"
                     )}
                   >
@@ -505,19 +521,19 @@ export const TransactionModal = React.memo(({
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="0,00"
-                        className="w-full pl-12 pr-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-bold text-xl"
+                        className="w-full pl-12 pr-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none font-bold text-base sm:text-xl"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-zinc-700 mb-2">Categoria</label>
                       <select 
                         required
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="w-full px-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-3 sm:py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                       >
                         <option value="" disabled>Selecione...</option>
                         {categories[type].map(cat => (
@@ -531,7 +547,7 @@ export const TransactionModal = React.memo(({
                         required
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value as 'credit_card' | 'other' | 'vr' | 'vt')}
-                        className="w-full px-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-3 sm:py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                       >
                         <option value="other">Outros / Dinheiro</option>
                         <option value="credit_card">Cartão de Crédito</option>
@@ -567,7 +583,7 @@ export const TransactionModal = React.memo(({
                               value={totalInstallments}
                               onChange={(e) => setTotalInstallments(e.target.value)}
                               placeholder="Ex: 12"
-                              className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                              className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                             />
                           </div>
                           <div>
@@ -579,7 +595,7 @@ export const TransactionModal = React.memo(({
                               value={paidInstallments}
                               onChange={(e) => setPaidInstallments(e.target.value)}
                               placeholder="Ex: 3"
-                              className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                              className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                             />
                           </div>
                         </div>
@@ -630,7 +646,7 @@ export const TransactionModal = React.memo(({
                               <select
                                 value={billingMonth}
                                 onChange={(e) => setBillingMonth(e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold"
+                                className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-base font-bold"
                               >
                                 {(() => {
                                   const baseDate = parseISO(date);
@@ -658,24 +674,40 @@ export const TransactionModal = React.memo(({
                           value={bank}
                           onChange={(e) => setBank(e.target.value)}
                           placeholder="Ex: Nubank, Itaú, Inter..."
-                          className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                          className="w-full px-4 py-3 bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                         />
                       </div>
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-bold text-zinc-700 mb-2">Data</label>
-                    <input 
-                      type="date" 
-                      required
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full px-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-700 mb-2">Data</label>
+                      <input 
+                        type="date" 
+                        required
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full px-4 py-3 sm:py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
+                      />
+                    </div>
+                    <div className="flex flex-col justify-end pb-1">
+                      <label className="flex items-center gap-3 cursor-pointer group mb-2 p-2 sm:p-0">
+                        <div className="relative flex items-center">
+                          <input 
+                            type="checkbox"
+                            checked={isPaid}
+                            onChange={(e) => setIsPaid(e.target.checked)}
+                            className="peer sr-only"
+                          />
+                          <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </div>
+                        <span className="text-sm font-bold text-zinc-700">Pago / Recebido?</span>
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <label className="block text-sm font-bold text-zinc-700 mb-2">Estabelecimento</label>
                       <input 
@@ -683,7 +715,7 @@ export const TransactionModal = React.memo(({
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Ex: Supermercado, Posto..."
-                        className="w-full px-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-3 sm:py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                       />
                     </div>
                     <div>
@@ -693,13 +725,13 @@ export const TransactionModal = React.memo(({
                         value={item}
                         onChange={(e) => setItem(e.target.value)}
                         placeholder="Ex: Arroz, Gasolina..."
-                        className="w-full px-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                        className="w-full px-4 py-3 sm:py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-base"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 shrink-0">
                   {editingTransaction && onDelete && (
                     <button 
                       type="button"
@@ -707,7 +739,7 @@ export const TransactionModal = React.memo(({
                         onDelete(editingTransaction.id);
                         onClose();
                       }}
-                      className="flex-1 py-4 rounded-2xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                      className="flex-1 py-3 sm:py-4 rounded-2xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <Trash2 className="w-5 h-5" />
                       Excluir
@@ -717,7 +749,7 @@ export const TransactionModal = React.memo(({
                     type="submit"
                     disabled={isScanning || isSaving}
                     className={cn(
-                      "flex-1 py-4 rounded-2xl font-bold text-white shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2",
+                      "flex-1 py-3 sm:py-4 rounded-2xl font-bold text-white shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base",
                       type === 'income' ? "bg-emerald-600 shadow-emerald-100 hover:bg-emerald-700" : "bg-red-600 shadow-red-100 hover:bg-red-700"
                     )}
                   >
