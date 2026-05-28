@@ -2402,76 +2402,7 @@ export default function App() {
     showOnlyInstallments, isConsulting, isChatActive, chatMessages, chatInput, isSendingChat, getAIAdvice, handleSendChatMessage
   ]);
 
-  const Sidebar = ({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (tab: any) => void }) => {
-    const menuItems = [
-      { id: 'history', label: 'Mensal', icon: History, fullLabel: 'Receitas e despesas mensal' },
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, fullLabel: 'Dashboard' },
-      { id: 'credit_card', label: 'Cartão', icon: PieChartIcon, fullLabel: 'Cartão de Crédito' },
-      { id: 'vr', label: 'VR', icon: Coffee, fullLabel: 'Vale Refeição' },
-      { id: 'vt', label: 'VT', icon: Bus, fullLabel: 'Vale Transporte' },
-    ];
 
-    return (
-      <aside className="hidden md:flex w-20 lg:w-72 bg-white border-r border-zinc-200 flex-col sticky top-0 h-screen z-50 transition-all duration-300">
-        <nav className="flex-1 px-3 py-8 space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={cn(
-                "w-full flex items-center gap-4 p-4 rounded-2xl transition-all group relative",
-                activeTab === item.id 
-                  ? "bg-zinc-900 text-white shadow-xl shadow-zinc-900/20" 
-                  : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
-              )}
-            >
-              <item.icon className={cn(
-                "w-6 h-6 shrink-0 transition-transform group-hover:scale-110",
-                activeTab === item.id ? "text-blue-400" : "text-zinc-400 group-hover:text-zinc-600"
-              )} />
-              <span className="hidden lg:block font-bold text-sm tracking-tight">{item.fullLabel}</span>
-              {activeTab === item.id && (
-                <motion.div 
-                  layoutId="activeTabIndicator"
-                  className="absolute left-0 w-1 h-8 bg-blue-500 rounded-r-full lg:hidden"
-                />
-              )}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-6 border-t border-zinc-100">
-          {isInstallable && (
-            <button 
-              onClick={handleInstallClick}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all group border border-blue-100 mb-3"
-            >
-              <Download className="w-6 h-6 shrink-0 group-hover:scale-110 transition-transform text-blue-600" />
-              <span className="hidden lg:block font-bold text-sm tracking-tight text-left">Instalar no PC</span>
-            </button>
-          )}
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-500 hover:bg-red-50 hover:text-red-600 transition-all group"
-          >
-            <LogOut className="w-6 h-6 shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="hidden lg:block font-bold text-sm tracking-tight">Sair da Conta</span>
-          </button>
-          
-          <div className="mt-8 pt-8 border-t border-zinc-100 flex flex-col items-center justify-center transition-all duration-500 hover:scale-105">
-            <div className="flex items-center gap-4">
-              <EcsLogo variant="light" size={56} />
-              <div className="flex flex-col leading-none hidden lg:flex">
-                <span className="text-xl font-black text-[#06182c] tracking-tight">ECS</span>
-                <span className="text-[10px] font-black text-[#06182c]/80 tracking-[0.5em] -mt-1">SYSTEMS</span>
-              </div>
-            </div>
-            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mt-4 hidden lg:block">Engineering the Future</p>
-          </div>
-        </div>
-      </aside>
-    );
-  };
 
   if (loading) {
     return (
@@ -2536,7 +2467,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className="flex min-h-dvh bg-zinc-50 text-zinc-900 overflow-x-hidden">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          isInstallable={isInstallable}
+          handleInstallClick={handleInstallClick}
+          handleLogout={handleLogout}
+        />
         
         <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
           {/* Header */}
@@ -3338,5 +3275,88 @@ export default function App() {
     </div>
   </div>
 </ErrorBoundary>
-);
+  );
 }
+
+const Sidebar = ({ 
+  activeTab, 
+  setActiveTab, 
+  isInstallable, 
+  handleInstallClick, 
+  handleLogout 
+}: { 
+  activeTab: string; 
+  setActiveTab: (tab: any) => void;
+  isInstallable: boolean;
+  handleInstallClick: () => void;
+  handleLogout: () => void;
+}) => {
+  const menuItems = [
+    { id: 'history', label: 'Mensal', icon: History, fullLabel: 'Receitas e despesas mensal' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, fullLabel: 'Dashboard' },
+    { id: 'credit_card', label: 'Cartão', icon: PieChartIcon, fullLabel: 'Cartão de Crédito' },
+    { id: 'vr', label: 'VR', icon: Coffee, fullLabel: 'Vale Refeição' },
+    { id: 'vt', label: 'VT', icon: Bus, fullLabel: 'Vale Transporte' },
+  ];
+
+  return (
+    <aside className="hidden md:flex w-20 lg:w-72 bg-white border-r border-zinc-200 flex-col sticky top-0 h-screen z-50 transition-all duration-300">
+      <nav className="flex-1 px-3 py-8 space-y-2">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={cn(
+              "w-full flex items-center gap-4 p-4 rounded-2xl transition-all group relative",
+              activeTab === item.id 
+                ? "bg-zinc-900 text-white shadow-xl shadow-zinc-900/20" 
+                : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+            )}
+          >
+            <item.icon className={cn(
+              "w-6 h-6 shrink-0 transition-transform group-hover:scale-110",
+              activeTab === item.id ? "text-blue-400" : "text-zinc-400 group-hover:text-zinc-600"
+            )} />
+            <span className="hidden lg:block font-bold text-sm tracking-tight">{item.fullLabel}</span>
+            {activeTab === item.id && (
+              <motion.div 
+                layoutId="activeTabIndicator"
+                className="absolute left-0 w-1 h-8 bg-blue-500 rounded-r-full lg:hidden"
+              />
+            )}
+          </button>
+        ))}
+      </nav>
+
+      <div className="p-6 border-t border-zinc-100">
+        {isInstallable && (
+          <button 
+            onClick={handleInstallClick}
+            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all group border border-blue-100 mb-3"
+          >
+            <Download className="w-6 h-6 shrink-0 group-hover:scale-110 transition-transform text-blue-600" />
+            <span className="hidden lg:block font-bold text-sm tracking-tight text-left">Instalar no PC</span>
+          </button>
+        )}
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-500 hover:bg-red-50 hover:text-red-600 transition-all group"
+        >
+          <LogOut className="w-6 h-6 shrink-0 group-hover:scale-110 transition-transform" />
+          <span className="hidden lg:block font-bold text-sm tracking-tight">Sair da Conta</span>
+        </button>
+        
+        <div className="mt-8 pt-8 border-t border-zinc-100 flex flex-col items-center justify-center transition-all duration-500 hover:scale-105">
+          <div className="flex items-center gap-4">
+            <EcsLogo variant="light" size={56} />
+            <div className="flex flex-col leading-none hidden lg:flex">
+              <span className="text-xl font-black text-[#06182c] tracking-tight">ECS</span>
+              <span className="text-[10px] font-black text-[#06182c]/80 tracking-[0.5em] -mt-1">SYSTEMS</span>
+            </div>
+          </div>
+          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mt-4 hidden lg:block">Engineering the Future</p>
+        </div>
+      </div>
+    </aside>
+  );
+};
