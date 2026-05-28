@@ -2580,12 +2580,14 @@ export default function App() {
                 Novo Lançamento
               </button>
             </div>
+
           {/* Summary Cards */}
           <div className={cn(
             "grid gap-4 sm:gap-6 mb-8 sm:mb-16",
             activeTab === 'credit_card' ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3"
           )}>
             <motion.div 
+              key="summary-card-balance"
               whileHover={{ y: -8 }}
               className={cn(
                 "glass-card p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] relative overflow-hidden group border-none bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-blue-600/20 col-span-2 lg:col-span-1",
@@ -2607,67 +2609,74 @@ export default function App() {
                    <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />}
                 </div>
               </div>
-              <h2 className="text-xl sm:text-3xl font-black tracking-tight">
-                {(
-                  activeTab === 'vr' ? vrStats.balance :
-                  activeTab === 'vt' ? vtStats.balance :
-                  activeTab === 'credit_card' ? ccStats.expense :
-                  (activeTab === 'history' && showAllHistory) ? allTimeStats.balance : stats.balance
-                ).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              <h2 className="text-xl sm:text-3xl font-black tracking-tight" id="balance-amount-display">
+                <span>
+                  {(
+                    activeTab === 'vr' ? vrStats.balance :
+                    activeTab === 'vt' ? vtStats.balance :
+                    activeTab === 'credit_card' ? ccStats.expense :
+                    (activeTab === 'history' && showAllHistory) ? allTimeStats.balance : stats.balance
+                  ).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
               </h2>
             </motion.div>
 
           {activeTab !== 'credit_card' && (
-            <>
-              <motion.div 
-                whileHover={{ y: -8 }}
-                className="glass-card p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] relative overflow-hidden group"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors" />
-                <div className="flex justify-between items-start mb-4 sm:mb-6">
-                  <span className="text-[10px] sm:text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">
-                    {activeTab === 'vr' ? 'Recargas' :
-                     activeTab === 'vt' ? 'Recargas' :
-                     (activeTab === 'history' && showAllHistory) ? 'Receitas Totais' : 'Receitas'}
-                  </span>
-                  <div className="p-2 sm:p-3 bg-emerald-50 rounded-xl sm:rounded-2xl text-emerald-600">
-                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
+            <motion.div 
+              key="summary-card-income"
+              whileHover={{ y: -8 }}
+              className="glass-card p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors" />
+              <div className="flex justify-between items-start mb-4 sm:mb-6">
+                <span className="text-[10px] sm:text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">
+                  {activeTab === 'vr' ? 'Recargas' :
+                   activeTab === 'vt' ? 'Recargas' :
+                   (activeTab === 'history' && showAllHistory) ? 'Receitas Totais' : 'Receitas'}
+                </span>
+                <div className="p-2 sm:p-3 bg-emerald-50 rounded-xl sm:rounded-2xl text-emerald-600">
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <h2 className="text-xl sm:text-3xl font-black text-emerald-600 tracking-tight">
+              </div>
+              <h2 className="text-xl sm:text-3xl font-black text-emerald-600 tracking-tight" id="income-amount-display">
+                <span>
                   {(
                     activeTab === 'vr' ? vrStats.income :
-                    activeTab === 'vt' ? vtStats.income :
+                    activeTab === 'vt' ? vrStats.income :
                     (activeTab === 'history' && showAllHistory) ? allTimeStats.income : stats.income
                   ).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </h2>
-              </motion.div>
+                </span>
+              </h2>
+            </motion.div>
+          )}
 
-              <motion.div 
-                whileHover={{ y: -8 }}
-                className="glass-card p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] relative overflow-hidden group"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-red-500/10 transition-colors" />
-                <div className="flex justify-between items-start mb-4 sm:mb-6">
-                  <span className="text-[10px] sm:text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">
-                    {activeTab === 'vr' ? 'Gastos' :
-                     activeTab === 'vt' ? 'Gastos' :
-                     (activeTab === 'history' && showAllHistory) ? 'Despesas Totais' : 'Despesas'}
-                  </span>
-                  <div className="p-2 sm:p-3 bg-red-50 rounded-xl sm:rounded-2xl text-red-600">
-                    <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
+          {activeTab !== 'credit_card' && (
+            <motion.div 
+              key="summary-card-expense"
+              whileHover={{ y: -8 }}
+              className="glass-card p-5 sm:p-8 rounded-3xl sm:rounded-[2.5rem] relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl -mr-16 -mt-16 group-hover:bg-red-500/10 transition-colors" />
+              <div className="flex justify-between items-start mb-4 sm:mb-6">
+                <span className="text-[10px] sm:text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">
+                  {activeTab === 'vr' ? 'Gastos' :
+                   activeTab === 'vt' ? 'Gastos' :
+                   (activeTab === 'history' && showAllHistory) ? 'Despesas Totais' : 'Despesas'}
+                </span>
+                <div className="p-2 sm:p-3 bg-red-50 rounded-xl sm:rounded-2xl text-red-600">
+                  <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <h2 className="text-xl sm:text-3xl font-black text-red-600 tracking-tight">
+              </div>
+              <h2 className="text-xl sm:text-3xl font-black text-red-600 tracking-tight" id="expense-amount-display">
+                <span>
                   {(
                     activeTab === 'vr' ? vrStats.expense :
-                    activeTab === 'vt' ? vtStats.expense :
+                    activeTab === 'vt' ? vrStats.expense :
                     (activeTab === 'history' && showAllHistory) ? allTimeStats.expense : stats.expense
                   ).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </h2>
-              </motion.div>
-
-            </>
+                </span>
+              </h2>
+            </motion.div>
           )}
         </div>
 
@@ -2716,8 +2725,9 @@ export default function App() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {transactionToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div key="delete-confirm-overlay-container" className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
+              key="delete-confirm-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2725,6 +2735,7 @@ export default function App() {
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="delete-confirm-content"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2758,8 +2769,9 @@ export default function App() {
       {/* Batch Review Modal */}
       <AnimatePresence>
         {isBatchModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div key="batch-modal-overlay-container" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <motion.div 
+              key="batch-modal-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2767,7 +2779,7 @@ export default function App() {
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              key="batch-modal-content"              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white w-full sm:max-w-3xl rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] mt-auto sm:mt-0"
@@ -2937,8 +2949,9 @@ export default function App() {
       {/* Bulk Delete Confirmation Modal */}
       <AnimatePresence>
         {isBulkDeleteConfirmOpen && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div key="bulk-delete-confirm-overlay-container" className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <motion.div 
+              key="bulk-delete-confirm-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2946,6 +2959,7 @@ export default function App() {
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="bulk-delete-confirm-content"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2977,9 +2991,24 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bulk Edit Modal */}
-      {isBulkEditModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+      <AnimatePresence>
+        {isBulkEditModalOpen && (
+          <div key="bulk-edit-overlay-container" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              key="bulk-edit-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeBulkEditModal}
+              className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              key="bulk-edit-content"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl"
+            >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-zinc-900">Edição em Massa</h3>
               <button onClick={closeBulkEditModal} className="p-2 hover:bg-zinc-100 rounded-full">
@@ -3084,15 +3113,17 @@ export default function App() {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+    </AnimatePresence>
 
       {/* Drill-down Modal */}
       <AnimatePresence>
         {selectedCategoryForDrillDown && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div key="drilldown-modal-overlay-container" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <motion.div 
+              key="drilldown-modal-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -3100,6 +3131,7 @@ export default function App() {
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="drilldown-modal-content"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -3181,8 +3213,9 @@ export default function App() {
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {isLogoutModalOpen && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div key="logout-confirm-overlay-container" className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <motion.div 
+              key="logout-confirm-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -3190,6 +3223,7 @@ export default function App() {
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="logout-confirm-content"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -3223,8 +3257,9 @@ export default function App() {
       {/* Welcome Modal */}
       <AnimatePresence>
         {showWelcomeModal && user && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+            <div key="welcome-modal-overlay-container" className="fixed inset-0 z-[80] flex items-center justify-center p-4">
               <motion.div 
+                key="welcome-modal-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -3232,6 +3267,7 @@ export default function App() {
                 className="absolute inset-0 bg-zinc-900/40 backdrop-blur-md"
               />
               <motion.div 
+                key="welcome-modal-content"
                 initial={{ opacity: 0, scale: 0.8, y: 40 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: 40 }}

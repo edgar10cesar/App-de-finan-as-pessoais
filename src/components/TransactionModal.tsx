@@ -377,8 +377,9 @@ export const TransactionModal = React.memo(({
     <>
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div key="transaction-modal-overlay-container" className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
+              key="transaction-modal-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -386,6 +387,7 @@ export const TransactionModal = React.memo(({
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="transaction-modal-content"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -770,8 +772,9 @@ export const TransactionModal = React.memo(({
       {/* Calculator Modal */}
       <AnimatePresence>
         {isCalculatorOpen && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div key="calculator-modal-overlay-container" className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <motion.div 
+              key="calculator-modal-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -779,6 +782,7 @@ export const TransactionModal = React.memo(({
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="calculator-modal-content"
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -872,8 +876,9 @@ export const TransactionModal = React.memo(({
       {/* Unsaved Changes Confirmation Modal */}
       <AnimatePresence>
         {showUnsavedAlert && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div key="unsaved-alert-overlay-container" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <motion.div 
+              key="unsaved-alert-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -881,6 +886,7 @@ export const TransactionModal = React.memo(({
               className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
             />
             <motion.div 
+              key="unsaved-alert-content"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
